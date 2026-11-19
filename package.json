@@ -1,0 +1,25 @@
+{
+  "name": "mercado-publico-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kit completo para trabajar con la API de Mercado Público (ChileCompra): SDK, backend seguro y app web/móvil.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @mp/sdk && npm run build -w @mp/api && npm run build -w @mp/web",
+    "dev": "npm run build -w @mp/sdk && concurrently -n api,web -c blue,green \"npm run dev -w @mp/api\" \"npm run dev -w @mp/web\"",
+    "dev:mock": "npm run build -w @mp/sdk && concurrently -n api,web -c blue,green \"npm run dev:mock -w @mp/api\" \"npm run dev -w @mp/web\"",
+    "test": "npm run test -w @mp/sdk && npm run test -w @mp/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "start": "npm run start -w @mp/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

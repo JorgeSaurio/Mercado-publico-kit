@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.log
+coverage/
+apps/web/android/
+apps/web/ios/
+apps/web/dev-dist/

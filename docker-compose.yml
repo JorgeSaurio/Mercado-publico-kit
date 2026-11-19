@@ -1,0 +1,10 @@
+services:
+  mercado-publico:
+    build: .
+    ports:
+      - "3001:3001"
+    env_file: .env
+    environment:
+      # Detrás de un proxy (Nginx, Traefik, Cloud Run…) para que el rate limit vea la IP real
+      TRUST_PROXY: "1"
+    restart: unless-stopped
