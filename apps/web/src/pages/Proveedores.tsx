@@ -3,7 +3,7 @@ import { formatearRut, validarRut } from '@mp/sdk';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
-import { Cargando, ErrorCaja } from '../components';
+import { Cargando, ErrorCaja, SelectorEmpresas } from '../components';
 
 export default function Proveedores() {
   const [sp, setSp] = useSearchParams();
@@ -16,12 +16,14 @@ export default function Proveedores() {
   return (
     <section>
       <header className="encabezado">
-        <h1>Proveedores</h1>
-        <p>Ingresa el RUT de una empresa para obtener su código en Mercado Público y ver su actividad.</p>
+        <h1>Empresas</h1>
+        <p>Con el RUT de una empresa obtienes su código de proveedor y ves qué le ha comprado el Estado.</p>
       </header>
+      <SelectorEmpresas />
 
       <form
         className="filtros"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
           if (!validarRut(texto)) {
@@ -40,24 +42,34 @@ export default function Proveedores() {
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             onBlur={() => texto && validarRut(texto) && setTexto(formatearRut(texto))}
-            placeholder="ej: 76.543.210-3"
+            placeholder="76.543.210-3"
             autoComplete="off"
+            inputMode="text"
             aria-invalid={!!errorLocal}
+            aria-describedby={errorLocal ? 'rut-error' : 'rut-ayuda'}
           />
+          {errorLocal ? (
+            <span className="campo__error" id="rut-error">
+              {errorLocal}
+            </span>
+          ) : (
+            <span className="campo__ayuda" id="rut-ayuda">
+              Con o sin puntos y guion.
+            </span>
+          )}
         </label>
         <div className="filtros__acciones">
           <button className="btn btn--primario">Buscar</button>
         </div>
       </form>
 
-      {errorLocal && <div className="aviso aviso--error">{errorLocal}</div>}
       {q.isFetching && <Cargando texto="Buscando proveedor…" />}
       {q.isError && <ErrorCaja error={q.error} />}
       {q.data && (
-        <div className="panel">
+        <div className="panel resultado">
           <h2>{q.data.NombreEmpresa}</h2>
-          <p>
-            RUT <strong>{rut}</strong> · Código de proveedor <code className="codigo">{q.data.CodigoEmpresa}</code>
+          <p className="meta">
+            RUT <span className="codigo">{rut}</span> · Código de proveedor <span className="codigo">{q.data.CodigoEmpresa}</span>
           </p>
           <div className="acciones">
             <Link className="btn btn--primario" to={`/ordenes?proveedor=${q.data.CodigoEmpresa}`}>
@@ -67,7 +79,9 @@ export default function Proveedores() {
               Licitaciones de hoy
             </Link>
           </div>
-          <p className="sutil">Puedes cambiar la fecha desde los filtros de cada listado.</p>
+          <p className="sutil">
+            Puedes cambiar la fecha desde los filtros de cada listado.
+          </p>
         </div>
       )}
     </section>

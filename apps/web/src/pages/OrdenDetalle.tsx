@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { CODIGOS_ESTADO_OC } from '@mp/sdk';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { BotonFavorito, Cargando, Dato, ErrorCaja, Estado } from '../components';
@@ -19,21 +20,23 @@ export default function OrdenDetalle() {
   return (
     <article className="detalle">
       <button className="btn btn--texto volver" onClick={() => navegar(-1)}>
-        ← Volver
+        <ArrowLeft size={16} aria-hidden /> Volver
       </button>
 
       <header className="detalle__cabecera">
-        <div className="tarjeta__fila">
-          <code className="codigo">{o.Codigo}</code>
-          <Estado nombre={o.Estado ?? CODIGOS_ESTADO_OC[o.CodigoEstado]} />
-          {o.Tipo && <span className="chip">{o.Tipo}</span>}
-        </div>
-        <h1>{o.Nombre}</h1>
-        <div className="acciones">
-          <BotonFavorito tipo="oc" codigo={o.Codigo} nombre={o.Nombre} />
-          <a className="btn btn--primario" href={urlFichaOC(o.Codigo)} target="_blank" rel="noreferrer">
-            Ver ficha oficial ↗
-          </a>
+        <div>
+          <div className="fila__linea">
+            <code className="codigo">{o.Codigo}</code>
+            <Estado nombre={o.Estado ?? CODIGOS_ESTADO_OC[o.CodigoEstado]} />
+            {o.Tipo && <span className="chip">{o.Tipo}</span>}
+          </div>
+          <h1>{o.Nombre}</h1>
+          <div className="acciones">
+            <a className="btn btn--primario" href={urlFichaOC(o.Codigo)} target="_blank" rel="noopener noreferrer">
+              Ver ficha oficial <ExternalLink size={15} aria-hidden />
+            </a>
+            <BotonFavorito tipo="oc" codigo={o.Codigo} nombre={o.Nombre} />
+          </div>
         </div>
       </header>
 

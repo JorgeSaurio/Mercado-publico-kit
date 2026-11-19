@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
-import { Cargando, ErrorCaja, MetaResultados, Paginacion, Vacio } from '../components';
+import { Esqueleto, ErrorCaja, MetaResultados, Paginacion, SelectorEmpresas, Vacio } from '../components';
 
 const POR_PAGINA = 30;
 
@@ -29,9 +29,10 @@ export default function Compradores() {
   return (
     <section>
       <header className="encabezado">
-        <h1>Organismos compradores</h1>
-        <p>Encuentra el código de un organismo para filtrar sus licitaciones y órdenes de compra.</p>
+        <h1>Empresas</h1>
+        <p>Encuentra un organismo público y revisa lo que está licitando o comprando hoy.</p>
       </header>
+      <SelectorEmpresas />
 
       <div className="filtros">
         <label className="campo campo--ancho">
@@ -40,7 +41,7 @@ export default function Compradores() {
         </label>
       </div>
 
-      {consulta.isPending && <Cargando />}
+      {consulta.isPending && <Esqueleto texto="Cargando organismos…" />}
       {consulta.isError && <ErrorCaja error={consulta.error} reintentar={() => consulta.refetch()} />}
       {consulta.data && (
         <>
@@ -48,7 +49,7 @@ export default function Compradores() {
           {consulta.data.items.length === 0 ? (
             <Vacio>Sin coincidencias.</Vacio>
           ) : (
-            <div className="tabla-scroll panel">
+            <div className="panel"><div className="tabla-scroll">
               <table className="tabla">
                 <thead>
                   <tr>
@@ -72,7 +73,7 @@ export default function Compradores() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div></div>
           )}
           <Paginacion total={consulta.data.total} pagina={pagina} porPagina={POR_PAGINA} />
         </>

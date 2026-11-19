@@ -1,9 +1,10 @@
+import { ChevronLeft, ChevronRight, Inbox, Star } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { NavLink, useSearchParams } from 'react-router-dom';
 import { favoritos, useEsFavorito, type Favorito } from './favoritos';
-import { hace } from './formato';
+import { diasHasta, hace } from './formato';
 
-/** Colores por estado (licitación u OC) para que se reconozcan de un vistazo. */
+/** Tono por estado (licitación u OC). Se muestra como un punto + texto, nunca solo color. */
 const TONO: Record<string, string> = {
   Publicada: 'verde',
   Aceptada: 'verde',
@@ -20,13 +21,62 @@ const TONO: Record<string, string> = {
 
 export function Estado({ nombre }: { nombre?: string }) {
   if (!nombre) return null;
-  return <span className={`estado estado--${TONO[nombre] ?? 'gris'}`}>{nombre}</span>;
+  return (
+    <span className={`estado estado--${TONO[nombre] ?? 'gris'}`}>
+      <i aria-hidden />
+      {nombre}
+    </span>
+  );
+}
+
+/** Días que faltan para el cierre: el dato que decide si alcanzas a postular. */
+export function Plazo({ cierre, abierta, grande }: { cierre?: string | null; abierta: boolean; grande?: boolean }) {
+  const d = abierta ? diasHasta(cierre) : null;
+  const clase = `plazo ${grande ? 'plazo--grande' : ''}`;
+  if (d == null || d < 0) {
+    return (
+      <div className={`${clase} plazo--cerrado`} aria-label="Sin plazo vigente">
+        <strong aria-hidden>—</strong>
+        <span>cerrada</span>
+      </div>
+    );
+  }
+  const tono = d <= 1 ? 'rojo' : d <= 3 ? 'ambar' : '';
+  const texto = d === 0 ? 'Cierra hoy' : `Cierra en ${d} día${d === 1 ? '' : 's'}`;
+  return (
+    <div className={`${clase} ${tono ? `plazo--${tono}` : ''}`} aria-label={texto} title={texto}>
+      <strong aria-hidden>{d === 0 ? 'Hoy' : d}</strong>
+      <span aria-hidden>{d === 0 ? 'cierra' : d === 1 ? 'día' : 'días'}</span>
+    </div>
+  );
 }
 
 export function Cargando({ texto = 'Cargando…' }: { texto?: string }) {
   return (
     <div className="cargando" role="status">
       <span className="spinner" aria-hidden /> {texto}
+    </div>
+  );
+}
+
+/** Filas de relleno mientras llega la primera respuesta: reserva el espacio y evita saltos. */
+export function Esqueleto({ filas = 6, texto = 'Cargando…' }: { filas?: number; texto?: string }) {
+  return (
+    <div role="status">
+      <span className="sr-only">
+        {texto}
+      </span>
+      <ul className="libro esqueleto" aria-hidden>
+        {Array.from({ length: filas }, (_, i) => (
+          <li className="fila" key={i}>
+            <b />
+            <div>
+              <b style={{ width: '30%' }} />
+              <b style={{ width: `${55 + ((i * 17) % 35)}%` }} />
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -46,7 +96,12 @@ export function ErrorCaja({ error, reintentar }: { error: unknown; reintentar?: 
 }
 
 export function Vacio({ children }: { children: ReactNode }) {
-  return <div className="vacio">{children}</div>;
+  return (
+    <div className="vacio">
+      <Inbox size={28} strokeWidth={1.5} aria-hidden />
+      <div>{children}</div>
+    </div>
+  );
 }
 
 export function Paginacion({ total, pagina, porPagina }: { total: number; pagina: number; porPagina: number }) {
@@ -57,18 +112,18 @@ export function Paginacion({ total, pagina, porPagina }: { total: number; pagina
     const n = new URLSearchParams(sp);
     n.set('pagina', String(p));
     setSp(n);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0 });
   };
   return (
     <nav className="paginacion" aria-label="Paginación">
       <button className="btn" disabled={pagina <= 1} onClick={() => ir(pagina - 1)}>
-        ← Anterior
+        <ChevronLeft size={16} aria-hidden /> Anterior
       </button>
       <span>
-        Página {pagina} de {paginas}
+        {pagina} / {paginas}
       </span>
       <button className="btn" disabled={pagina >= paginas} onClick={() => ir(pagina + 1)}>
-        Siguiente →
+        Siguiente <ChevronRight size={16} aria-hidden />
       </button>
     </nav>
   );
@@ -76,7 +131,7 @@ export function Paginacion({ total, pagina, porPagina }: { total: number; pagina
 
 export function MetaResultados({ total, actualizado, desdeCache }: { total: number; actualizado: string; desdeCache: boolean }) {
   return (
-    <p className="meta">
+    <p className="meta" aria-live="polite">
       <strong>{total.toLocaleString('es-CL')}</strong> resultado{total === 1 ? '' : 's'} · datos {hace(actualizado)}
       {desdeCache && <span title="Respuesta servida desde la caché del servidor"> · caché</span>}
     </p>
@@ -85,19 +140,16 @@ export function MetaResultados({ total, actualizado, desdeCache }: { total: numb
 
 export function BotonFavorito(props: Omit<Favorito, 'agregado'>) {
   const activo = useEsFavorito(props.tipo, props.codigo);
+  const etiqueta = activo ? 'Quitar de guardadas' : 'Guardar para seguirla';
   return (
     <button
       className={`favorito ${activo ? 'favorito--activo' : ''}`}
       aria-pressed={activo}
-      aria-label={activo ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-      title={activo ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        favoritos.alternar(props);
-      }}
+      aria-label={`${etiqueta}: ${props.codigo}`}
+      title={etiqueta}
+      onClick={() => favoritos.alternar(props)}
     >
-      {activo ? '★' : '☆'}
+      <Star size={20} strokeWidth={1.75} fill={activo ? 'currentColor' : 'none'} aria-hidden />
     </button>
   );
 }
@@ -111,16 +163,31 @@ export function Dato({ etiqueta, children }: { etiqueta: string; children: React
   );
 }
 
+/** Cambia entre las dos formas de buscar empresas (proveedores por RUT / organismos compradores). */
+export function SelectorEmpresas() {
+  return (
+    <nav className="selector" aria-label="Tipo de empresa">
+      <NavLink to="/proveedores" className={({ isActive }) => (isActive ? 'activo' : '')}>
+        Proveedores
+      </NavLink>
+      <NavLink to="/compradores" className={({ isActive }) => (isActive ? 'activo' : '')}>
+        Organismos
+      </NavLink>
+    </nav>
+  );
+}
+
 /** Hook para leer/escribir filtros en la URL (así los enlaces se pueden compartir). */
 export function useFiltrosUrl<T extends Record<string, string>>(defaults: T) {
   const [sp, setSp] = useSearchParams();
   const valores = Object.fromEntries(Object.keys(defaults).map((k) => [k, sp.get(k) ?? defaults[k]])) as T;
   const pagina = Math.max(1, Number(sp.get('pagina')) || 1);
+  const activos = Object.keys(defaults).filter((k) => k !== 'q' && valores[k] && valores[k] !== defaults[k]).length;
   const aplicar = (nuevos: Partial<T>) => {
     const n = new URLSearchParams();
     const todos = { ...valores, ...nuevos };
     for (const [k, v] of Object.entries(todos)) if (v && v !== defaults[k]) n.set(k, v);
     setSp(n); // al cambiar filtros vuelve a la página 1
   };
-  return { valores, pagina, aplicar };
+  return { valores, pagina, aplicar, activos };
 }

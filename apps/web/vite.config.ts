@@ -18,8 +18,8 @@ export default defineConfig(({ mode }) => {
           short_name: 'MP Kit',
           description: 'Explora licitaciones y órdenes de compra del Estado de Chile',
           lang: 'es-CL',
-          theme_color: '#0b3c5d',
-          background_color: '#f5f7fa',
+          theme_color: '#17181c',
+          background_color: '#f5f3ee',
           display: 'standalone',
           start_url: '/',
           icons: [
@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          // Incluye las fuentes autoalojadas para que la app se vea igual sin conexión
+          globPatterns: ['**/*.{js,css,html,svg,woff2}'],
           // Respuestas de la API: primero red, si falla usa lo último guardado (sirve offline)
           runtimeCaching: [
             {

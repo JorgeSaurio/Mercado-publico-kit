@@ -1,7 +1,8 @@
+import { Download, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Vacio } from '../components';
+import { Plazo, Vacio } from '../components';
 import { favoritos, useFavoritos, type Favorito } from '../favoritos';
-import { diasHasta, fecha } from '../formato';
+import { fecha } from '../formato';
 
 function exportarCsv(lista: Favorito[]) {
   const filas = [['tipo', 'codigo', 'nombre', 'cierre', 'agregado'], ...lista.map((f) => [f.tipo, f.codigo, f.nombre, f.extra ?? '', f.agregado])];
@@ -13,7 +14,7 @@ function exportarCsv(lista: Favorito[]) {
   };
   const csv = filas.map((r) => r.map(celda).join(';')).join('\n');
   const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: 'favoritos-mercado-publico.csv' });
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'guardadas-mercado-publico.csv' });
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -25,44 +26,40 @@ export default function Favoritos() {
     <section>
       <header className="encabezado encabezado--acciones">
         <div>
-          <h1>Favoritos</h1>
-          <p>Guardados en este dispositivo.</p>
+          <h1>Guardadas</h1>
+          <p>Licitaciones y órdenes que sigues. Quedan solo en este dispositivo, no se envían a ningún servidor.</p>
         </div>
         {lista.length > 0 && (
           <button className="btn" onClick={() => exportarCsv(lista)}>
-            Exportar CSV
+            <Download size={16} aria-hidden /> Exportar CSV
           </button>
         )}
       </header>
 
       {lista.length === 0 ? (
-        <Vacio>Aún no guardas nada. Toca la ☆ en una licitación u orden de compra para seguirla aquí.</Vacio>
+        <Vacio>Aún no guardas nada. Usa la estrella de una licitación u orden de compra para seguirla aquí.</Vacio>
       ) : (
-        <ul className="lista">
+        <ul className="libro">
           {lista.map((f) => {
-            const dias = f.tipo === 'licitacion' ? diasHasta(f.extra) : null;
+            const esLic = f.tipo === 'licitacion';
             return (
-              <li key={`${f.tipo}-${f.codigo}`}>
-                <Link to={f.tipo === 'licitacion' ? `/licitaciones/${encodeURIComponent(f.codigo)}` : `/ordenes/${encodeURIComponent(f.codigo)}`} className="tarjeta">
-                  <div className="tarjeta__cuerpo">
-                    <div className="tarjeta__fila">
-                      <span className="chip">{f.tipo === 'licitacion' ? 'Licitación' : 'Orden de compra'}</span>
+              <li key={`${f.tipo}-${f.codigo}`} className={`fila ${esLic ? '' : 'fila--simple'}`}>
+                <Link to={esLic ? `/licitaciones/${encodeURIComponent(f.codigo)}` : `/ordenes/${encodeURIComponent(f.codigo)}`} className="fila__enlace">
+                  {esLic && <Plazo cierre={f.extra} abierta />}
+                  <div className="fila__cuerpo">
+                    <div className="fila__linea">
+                      <span className="chip">{esLic ? 'Licitación' : 'Orden de compra'}</span>
                       <code className="codigo">{f.codigo}</code>
-                      {dias != null && dias >= 0 && dias <= 3 && <span className="chip chip--rojo">Cierra pronto</span>}
                     </div>
                     <h3>{f.nombre}</h3>
-                    {f.extra && <small>Cierre: {fecha(f.extra)}</small>}
+                    {f.extra && <small>Cierre {fecha(f.extra)}</small>}
                   </div>
-                  <button
-                    className="btn btn--texto"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      favoritos.quitar(f.tipo, f.codigo);
-                    }}
-                  >
-                    Quitar
-                  </button>
                 </Link>
+                <div className="fila__accion">
+                  <button className="btn btn--texto btn--icono" aria-label={`Quitar ${f.codigo} de guardadas`} title="Quitar" onClick={() => favoritos.quitar(f.tipo, f.codigo)}>
+                    <X size={18} aria-hidden />
+                  </button>
+                </div>
               </li>
             );
           })}

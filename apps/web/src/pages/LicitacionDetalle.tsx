@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { CODIGOS_ESTADO_LICITACION, TIPOS_LICITACION } from '@mp/sdk';
+import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
-import { BotonFavorito, Cargando, Dato, ErrorCaja, Estado } from '../components';
-import { diasHasta, dinero, fecha, numero, urlFichaLicitacion, urlOficialSegura } from '../formato';
+import { BotonFavorito, Cargando, Dato, ErrorCaja, Estado, Plazo } from '../components';
+import { dinero, fecha, numero, urlFichaLicitacion, urlOficialSegura } from '../formato';
 
 export default function LicitacionDetalle() {
   const { codigo = '' } = useParams();
@@ -14,7 +15,7 @@ export default function LicitacionDetalle() {
   if (q.isError) return <ErrorCaja error={q.error} reintentar={() => q.refetch()} />;
   const l = q.data;
   const estado = l.Estado ?? CODIGOS_ESTADO_LICITACION[l.CodigoEstado];
-  const dias = l.CodigoEstado === 5 ? diasHasta(l.Fechas?.FechaCierre ?? l.FechaCierre) : null;
+  const cierre = l.Fechas?.FechaCierre ?? l.FechaCierre;
   const items = l.Items?.Listado ?? [];
 
   const compartir = async () => {
@@ -26,26 +27,28 @@ export default function LicitacionDetalle() {
   return (
     <article className="detalle">
       <button className="btn btn--texto volver" onClick={() => navegar(-1)}>
-        ← Volver
+        <ArrowLeft size={16} aria-hidden /> Volver
       </button>
 
       <header className="detalle__cabecera">
-        <div className="tarjeta__fila">
-          <code className="codigo">{l.CodigoExterno}</code>
-          <Estado nombre={estado} />
-          {l.Tipo && <span className="chip" title={TIPOS_LICITACION[l.Tipo]}>{l.Tipo}</span>}
-          {dias != null && dias >= 0 && <span className="chip chip--rojo">{dias === 0 ? 'Cierra hoy' : `Quedan ${dias} días`}</span>}
+        <div>
+          <div className="fila__linea">
+            <code className="codigo">{l.CodigoExterno}</code>
+            <Estado nombre={estado} />
+            {l.Tipo && <span className="chip" title={TIPOS_LICITACION[l.Tipo]}>{l.Tipo}</span>}
+          </div>
+          <h1>{l.Nombre}</h1>
+          <div className="acciones">
+            <a className="btn btn--primario" href={urlFichaLicitacion(l.CodigoExterno)} target="_blank" rel="noopener noreferrer">
+              {l.CodigoEstado === 5 ? 'Postular en Mercado Público' : 'Ver ficha oficial'} <ExternalLink size={15} aria-hidden />
+            </a>
+            <button className="btn" onClick={compartir}>
+              <Share2 size={15} aria-hidden /> Compartir
+            </button>
+            <BotonFavorito tipo="licitacion" codigo={l.CodigoExterno} nombre={l.Nombre} extra={cierre ?? undefined} />
+          </div>
         </div>
-        <h1>{l.Nombre}</h1>
-        <div className="acciones">
-          <BotonFavorito tipo="licitacion" codigo={l.CodigoExterno} nombre={l.Nombre} extra={l.Fechas?.FechaCierre ?? undefined} />
-          <a className="btn btn--primario" href={urlFichaLicitacion(l.CodigoExterno)} target="_blank" rel="noopener noreferrer">
-            Ver ficha oficial ↗
-          </a>
-          <button className="btn" onClick={compartir}>
-            Compartir
-          </button>
-        </div>
+        <Plazo cierre={cierre} abierta={l.CodigoEstado === 5} grande />
       </header>
 
       {l.Descripcion && <p className="descripcion">{l.Descripcion}</p>}
@@ -105,7 +108,7 @@ export default function LicitacionDetalle() {
               {urlOficialSegura(l.Adjudicacion.UrlActa) && (
                 <Dato etiqueta="Acta">
                   <a href={urlOficialSegura(l.Adjudicacion.UrlActa)} target="_blank" rel="noopener noreferrer">
-                    Ver acta ↗
+                    Ver acta <ExternalLink size={13} aria-hidden />
                   </a>
                 </Dato>
               )}

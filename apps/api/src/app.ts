@@ -103,6 +103,7 @@ export function crearApp(o: OpcionesApp) {
           // React usa style="..." en algunos componentes (barra de cuota)
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:'],
+          fontSrc: ["'self'", 'data:'],
           connectSrc: ["'self'"],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],

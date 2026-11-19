@@ -31,6 +31,10 @@ export function diasHasta(iso?: string | null) {
   return Math.round((objetivo.getTime() - hoy.getTime()) / 86_400_000);
 }
 
+const largo = new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Santiago' });
+/** "miércoles, 19 de noviembre" en hora de Chile. */
+export const fechaLarga = (d = new Date()) => largo.format(d);
+
 export function hace(isoFecha: string) {
   const seg = Math.round((Date.now() - new Date(isoFecha).getTime()) / 1000);
   if (seg < 60) return 'hace instantes';
