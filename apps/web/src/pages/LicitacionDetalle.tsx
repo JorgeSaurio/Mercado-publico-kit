@@ -3,7 +3,7 @@ import { CODIGOS_ESTADO_LICITACION, TIPOS_LICITACION } from '@mp/sdk';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { BotonFavorito, Cargando, Dato, ErrorCaja, Estado } from '../components';
-import { diasHasta, dinero, fecha, numero, urlFichaLicitacion } from '../formato';
+import { diasHasta, dinero, fecha, numero, urlFichaLicitacion, urlOficialSegura } from '../formato';
 
 export default function LicitacionDetalle() {
   const { codigo = '' } = useParams();
@@ -39,7 +39,7 @@ export default function LicitacionDetalle() {
         <h1>{l.Nombre}</h1>
         <div className="acciones">
           <BotonFavorito tipo="licitacion" codigo={l.CodigoExterno} nombre={l.Nombre} extra={l.Fechas?.FechaCierre ?? undefined} />
-          <a className="btn btn--primario" href={urlFichaLicitacion(l.CodigoExterno)} target="_blank" rel="noreferrer">
+          <a className="btn btn--primario" href={urlFichaLicitacion(l.CodigoExterno)} target="_blank" rel="noopener noreferrer">
             Ver ficha oficial ↗
           </a>
           <button className="btn" onClick={compartir}>
@@ -102,9 +102,9 @@ export default function LicitacionDetalle() {
               <Dato etiqueta="N° resolución">{l.Adjudicacion.Numero}</Dato>
               <Dato etiqueta="Fecha">{fecha(l.Adjudicacion.Fecha)}</Dato>
               <Dato etiqueta="N° de oferentes">{numero(l.Adjudicacion.NumeroOferentes)}</Dato>
-              {l.Adjudicacion.UrlActa && (
+              {urlOficialSegura(l.Adjudicacion.UrlActa) && (
                 <Dato etiqueta="Acta">
-                  <a href={l.Adjudicacion.UrlActa} target="_blank" rel="noreferrer">
+                  <a href={urlOficialSegura(l.Adjudicacion.UrlActa)} target="_blank" rel="noopener noreferrer">
                     Ver acta ↗
                   </a>
                 </Dato>

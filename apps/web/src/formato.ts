@@ -38,6 +38,21 @@ export function hace(isoFecha: string) {
   return `hace ${Math.round(seg / 3600)} h`;
 }
 
+/**
+ * Devuelve la URL solo si es https y pertenece a mercadopublico.cl / chilecompra.cl.
+ * Evita enlaces `javascript:` o a sitios de phishing si la API (o una caché) entrega un valor manipulado.
+ */
+export function urlOficialSegura(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    const dominioOk = /(^|\.)(mercadopublico|chilecompra)\.cl$/i.test(u.hostname);
+    return u.protocol === 'https:' && dominioOk ? u.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** URL pública de la ficha en mercadopublico.cl */
 export const urlFichaLicitacion = (codigo: string) =>
   `https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=${encodeURIComponent(codigo)}`;

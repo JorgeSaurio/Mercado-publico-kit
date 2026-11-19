@@ -31,7 +31,11 @@ export default defineConfig(({ mode }) => {
           // Respuestas de la API: primero red, si falla usa lo último guardado (sirve offline)
           runtimeCaching: [
             {
-              urlPattern: ({ url }) => url.pathname.startsWith('/api/v1/'),
+              // No se guardan en el dispositivo las búsquedas por RUT (posible dato personal) ni el estado del servidor
+              urlPattern: ({ url }) =>
+                url.pathname.startsWith('/api/v1/') &&
+                !url.pathname.startsWith('/api/v1/proveedores/') &&
+                url.pathname !== '/api/v1/estado',
               handler: 'NetworkFirst',
               options: {
                 cacheName: 'mp-api',

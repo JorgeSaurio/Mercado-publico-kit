@@ -92,7 +92,34 @@ describe('API', () => {
     vi.spyOn(fuente, 'obtenerOrdenCompra').mockRejectedValue(new MercadoPublicoError('Ticket no válido.', { codigo: 203, status: 500 }));
     const r = await request(app).get('/api/v1/ordenes-compra/1-1-SE25');
     expect(r.status).toBe(502);
-    expect(r.body).toMatchObject({ error: 'Ticket no válido.', codigoMP: 203 });
+    // no se filtra el mensaje interno de la API oficial (estado del ticket)
+    expect(JSON.stringify(r.body)).not.toContain('Ticket');
+    expect(r.body.codigoMP).toBeUndefined();
+  });
+
+  it('elimina datos personales de contacto en los detalles', async () => {
+    const lista = await request(app).get('/api/v1/licitaciones?estado=todos&porPagina=1');
+    const det = await request(app).get(`/api/v1/licitaciones/${lista.body.items[0].CodigoExterno}`);
+    expect(det.body.Comprador.NombreUsuario).toBeUndefined();
+    expect(det.body.NombreResponsableContrato).toBeUndefined();
+    expect(det.body.Comprador.NombreOrganismo).toBeTruthy();
+
+    const ocs = await request(app).get('/api/v1/ordenes-compra?porPagina=1');
+    const oc = await request(app).get(`/api/v1/ordenes-compra/${ocs.body.items[0].Codigo}`);
+    expect(oc.body.Proveedor.NombreContacto).toBeUndefined();
+    expect(oc.body.Proveedor.Nombre).toBeTruthy();
+  });
+
+  it('limita por IP las consultas que gastan cuota, pero no los aciertos de caché', async () => {
+    const app2 = crearApp({ servicio: new ServicioMercadoPublico(crearFuenteMock()), limiteConsultasNuevasPorHora: 2, modoMock: true });
+    expect((await request(app2).get('/api/v1/licitaciones/A-1-L125')).status).toBe(404); // miss 1
+    expect((await request(app2).get('/api/v1/licitaciones/A-2-L125')).status).toBe(404); // miss 2
+    expect((await request(app2).get('/api/v1/licitaciones/A-3-L125')).status).toBe(429); // bloqueado
+  });
+
+  it('envía Content-Security-Policy', async () => {
+    const r = await request(app).get('/api/v1/salud');
+    expect(r.headers['content-security-policy']).toContain("default-src 'self'");
   });
 
   it('respeta CORS solo para orígenes permitidos', async () => {

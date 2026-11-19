@@ -5,7 +5,13 @@ import { diasHasta, fecha } from '../formato';
 
 function exportarCsv(lista: Favorito[]) {
   const filas = [['tipo', 'codigo', 'nombre', 'cierre', 'agregado'], ...lista.map((f) => [f.tipo, f.codigo, f.nombre, f.extra ?? '', f.agregado])];
-  const csv = filas.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
+  // Neutraliza inyección de fórmulas (CSV injection): Excel/LibreOffice ejecutan celdas que empiezan con = + - @
+  const celda = (c: unknown) => {
+    const s = String(c);
+    const seguro = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+    return `"${seguro.replace(/"/g, '""')}"`;
+  };
+  const csv = filas.map((r) => r.map(celda).join(';')).join('\n');
   const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
   const a = Object.assign(document.createElement('a'), { href: url, download: 'favoritos-mercado-publico.csv' });
   a.click();

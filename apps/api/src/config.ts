@@ -16,6 +16,8 @@ const Esquema = z.object({
   MP_DAILY_LIMIT: z.coerce.number().int().positive().default(9500),
   MP_MIN_INTERVAL_MS: z.coerce.number().int().nonnegative().default(250),
   CLIENT_RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().default(120),
+  /** Consultas nuevas (no cacheadas) por IP y hora: evita que un cliente agote la cuota diaria. */
+  CLIENT_MISS_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(150),
   /** Carpeta con el build del frontend para servirlo desde el mismo backend (opcional). */
   WEB_DIST: z.string().optional(),
   TRUST_PROXY: z.string().optional(),

@@ -117,7 +117,9 @@ export class ServicioMercadoPublico {
   }
 
   async licitacion(codigo: string) {
-    return this.cache.obtener(`lic:det:${codigo}`, TTL.detalle, () => this.fuente.obtenerLicitacion(codigo));
+    return this.cache.obtener(`lic:det:${codigo}`, TTL.detalle, async () =>
+      minimizarLicitacion(await this.fuente.obtenerLicitacion(codigo)),
+    );
   }
 
   // ─── Órdenes de compra ───────────────────────────────────────────
@@ -153,7 +155,9 @@ export class ServicioMercadoPublico {
   }
 
   async ordenCompra(codigo: string) {
-    return this.cache.obtener(`oc:det:${codigo}`, TTL.detalle, () => this.fuente.obtenerOrdenCompra(codigo));
+    return this.cache.obtener(`oc:det:${codigo}`, TTL.detalle, async () =>
+      minimizarOrden(await this.fuente.obtenerOrdenCompra(codigo)),
+    );
   }
 
   // ─── Empresas ────────────────────────────────────────────────────
@@ -184,6 +188,45 @@ export class ServicioMercadoPublico {
   estado() {
     return { cuota: this.fuente.estadoCuota(), cache: this.cache.estadisticas() };
   }
+}
+
+// ─── Minimización de datos personales (Ley 21.719, principio de proporcionalidad) ─────
+//
+// La API oficial entrega datos de contacto de funcionarios y de personas de contacto de
+// proveedores (nombre, RUT, cargo, correo, teléfono). La app no los usa y, además, durante
+// un proceso de compra la comunicación con el organismo debe hacerse por la plataforma
+// (foro de preguntas), no por contacto directo. Se eliminan antes de cachear y responder.
+
+const CAMPOS_PERSONALES_COMPRADOR = [
+  'RutUsuario', 'CodigoUsuario', 'NombreUsuario', 'CargoUsuario',
+  'NombreContacto', 'CargoContacto', 'FonoContacto', 'MailContacto',
+] as const;
+const CAMPOS_PERSONALES_LICITACION = [
+  'NombreResponsablePago', 'EmailResponsablePago',
+  'NombreResponsableContrato', 'EmailResponsableContrato', 'FonoResponsableContrato',
+] as const;
+const CAMPOS_PERSONALES_PROVEEDOR = ['NombreContacto', 'CargoContacto', 'FonoContacto', 'MailContacto'] as const;
+
+function sinCampos<T extends object>(obj: T | undefined, campos: readonly string[]): T | undefined {
+  if (!obj) return obj;
+  const copia = { ...obj } as Record<string, unknown>;
+  for (const c of campos) delete copia[c];
+  return copia as T;
+}
+
+export function minimizarLicitacion(l: Licitacion | null): Licitacion | null {
+  if (!l) return l;
+  const r = sinCampos(l, CAMPOS_PERSONALES_LICITACION)!;
+  return { ...r, Comprador: sinCampos(l.Comprador, CAMPOS_PERSONALES_COMPRADOR) };
+}
+
+export function minimizarOrden(o: OrdenCompra | null): OrdenCompra | null {
+  if (!o) return o;
+  return {
+    ...o,
+    Comprador: sinCampos(o.Comprador, CAMPOS_PERSONALES_COMPRADOR),
+    Proveedor: sinCampos(o.Proveedor, CAMPOS_PERSONALES_PROVEEDOR),
+  };
 }
 
 /** Valida que una fecha YYYY-MM-DD exista (reutiliza la validación del SDK). */

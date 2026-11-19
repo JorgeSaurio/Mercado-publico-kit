@@ -21,6 +21,8 @@ export interface OpcionesApp {
   servicio: ServicioMercadoPublico;
   corsOrigins?: string[];
   rateLimitPorMinuto?: number;
+  /** Consultas que NO salen de caché permitidas por IP y hora (protege la cuota diaria del ticket). */
+  limiteConsultasNuevasPorHora?: number;
   webDist?: string;
   trustProxy?: string;
   modoMock?: boolean;
@@ -91,7 +93,26 @@ export function crearApp(o: OpcionesApp) {
 
   if (o.trustProxy) app.set('trust proxy', /^\d+$/.test(o.trustProxy) ? Number(o.trustProxy) : o.trustProxy);
   app.disable('x-powered-by');
-  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(
+    helmet({
+      // CSP estricta para el frontend servido desde este mismo backend (mitiga XSS e inyección de scripts)
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          // React usa style="..." en algunos componentes (barra de cuota)
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+          frameAncestors: ["'none'"],
+          formAction: ["'self'"],
+        },
+      },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(compression());
 
   const api = express.Router();
@@ -112,6 +133,21 @@ export function crearApp(o: OpcionesApp) {
     }),
   );
 
+  /**
+   * Límite por COSTO: solo cuentan las respuestas que no salieron de caché (las que gastan cuota
+   * del ticket). Evita que un cliente agote las 10.000 peticiones diarias variando fecha/organismo/código.
+   */
+  const limiteCosto = rateLimit({
+    windowMs: 60 * 60_000,
+    limit: o.limiteConsultasNuevasPorHora ?? 150,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    // "exitosa" = no costó cuota (hit de caché o rechazada por validación antes de llegar a la API)
+    requestWasSuccessful: (_req, res) => res.getHeader('X-Cache') === 'HIT' || res.statusCode === 400,
+    message: { error: 'Has hecho demasiadas consultas nuevas en la última hora. Intenta más tarde.' },
+  });
+
   // ─── Rutas ───────────────────────────────────────────────────────
 
   api.get('/salud', (_req, res) => {
@@ -122,6 +158,8 @@ export function crearApp(o: OpcionesApp) {
     res.set('Cache-Control', 'no-store');
     res.json({ modo: o.modoMock ? 'mock' : 'real', ...servicio.estado() });
   });
+
+  api.use(['/licitaciones', '/ordenes-compra', '/proveedores'], limiteCosto);
 
   api.get('/licitaciones', async (req, res) => {
     const q = parsear(QueryLicitaciones, req.query);
@@ -199,8 +237,12 @@ export function crearApp(o: OpcionesApp) {
       return;
     }
     if (err instanceof MercadoPublicoError) {
+      // No reenviar el texto crudo de la API oficial: puede revelar el estado del ticket o datos internos.
+      console.error(`[MP] error status=${err.status ?? '-'} codigo=${err.codigo ?? '-'}: ${err.message}`);
       const status = err.status && err.status >= 400 && err.status < 500 ? err.status : 502;
-      res.status(status).json({ error: err.message, codigoMP: err.codigo });
+      res.status(status).json({
+        error: status === 502 ? 'Mercado Público no respondió correctamente. Intenta nuevamente en unos minutos.' : 'La consulta no pudo procesarse.',
+      });
       return;
     }
     console.error(err);
