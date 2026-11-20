@@ -10,6 +10,7 @@ import LicitacionDetalle from './pages/LicitacionDetalle';
 import Licitaciones from './pages/Licitaciones';
 import OrdenDetalle from './pages/OrdenDetalle';
 import Ordenes from './pages/Ordenes';
+import Privacidad from './pages/Privacidad';
 import Proveedores from './pages/Proveedores';
 
 interface ItemNav {
@@ -87,11 +88,9 @@ export default function App() {
             {estado.data.modo === 'mock' && <span className="chip chip--ambar">Datos de ejemplo</span>}
             <span>Cuota diaria de consultas</span>
             <div className="cuota__barra">
-              <div style={{ transform: `scaleX(${Math.min(1, estado.data.cuota.usadas / estado.data.cuota.limite)})` }} />
+              <div style={{ transform: `scaleX(${estado.data.cuota.porcentaje / 100})` }} />
             </div>
-            <span className="cuota__cifras">
-              {estado.data.cuota.usadas.toLocaleString('es-CL')} / {estado.data.cuota.limite.toLocaleString('es-CL')}
-            </span>
+            <span className="cuota__cifras">{estado.data.cuota.porcentaje}% usado</span>
           </div>
         )}
       </aside>
@@ -111,10 +110,12 @@ export default function App() {
           <Route path="/proveedores" element={<Proveedores />} />
           <Route path="/compradores" element={<Compradores />} />
           <Route path="/favoritos" element={<Favoritos />} />
+          <Route path="/privacidad" element={<Privacidad />} />
           <Route path="*" element={<p>Página no encontrada.</p>} />
         </Routes>
         <footer className="pie">
-          Datos públicos de Mercado Público (ChileCompra). Herramienta independiente, no es un servicio oficial.
+          <span>Datos públicos de Mercado Público (ChileCompra). Herramienta independiente, no es un servicio oficial.</span>
+          <Link to="/privacidad">Privacidad y tus datos</Link>
         </footer>
       </main>
     </div>

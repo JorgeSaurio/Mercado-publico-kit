@@ -122,6 +122,19 @@ describe('API', () => {
     expect(r.headers['content-security-policy']).toContain("default-src 'self'");
   });
 
+  it('/estado público solo muestra el porcentaje; con token, el detalle', async () => {
+    const token = 'x'.repeat(32);
+    const conToken = crearApp({ servicio: new ServicioMercadoPublico(fuente), modoMock: true, tokenAdmin: token });
+    const pub = await request(conToken).get('/api/v1/estado');
+    expect(pub.body.cuota).toEqual({ porcentaje: expect.any(Number) });
+    expect(pub.body.cache).toBeUndefined();
+    const malo = await request(conToken).get('/api/v1/estado').set('Authorization', 'Bearer otro');
+    expect(malo.body.cache).toBeUndefined();
+    const admin = await request(conToken).get('/api/v1/estado').set('Authorization', `Bearer ${token}`);
+    expect(admin.body.cuota.limite).toBeGreaterThan(0);
+    expect(admin.body.cache).toBeDefined();
+  });
+
   it('respeta CORS solo para orígenes permitidos', async () => {
     const ok = await request(app).get('/api/v1/salud').set('Origin', 'http://localhost:5173');
     expect(ok.headers['access-control-allow-origin']).toBe('http://localhost:5173');

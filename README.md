@@ -58,7 +58,7 @@ Se solicita en https://www.chilecompra.cl/api/ con Clave Única; llega por corre
 | `GET /ordenes-compra/:codigo` | Detalle completo (montos, proveedor, ítems) | — |
 | `GET /proveedores/:rut` | Código de proveedor a partir del RUT (valida dígito verificador) | — |
 | `GET /compradores` | Buscar organismos compradores | `q`, `pagina`, `porPagina` |
-| `GET /estado` | Cuota usada hoy y estadísticas de caché | — |
+| `GET /estado` | Porcentaje de cuota usado hoy. Con `Authorization: Bearer <ADMIN_TOKEN>`: cifras exactas y estadísticas de caché | — |
 | `GET /salud` | Healthcheck | — |
 
 Respuesta de los listados:

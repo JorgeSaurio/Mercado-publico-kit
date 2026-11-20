@@ -21,6 +21,8 @@ const Esquema = z.object({
   /** Carpeta con el build del frontend para servirlo desde el mismo backend (opcional). */
   WEB_DIST: z.string().optional(),
   TRUST_PROXY: z.string().optional(),
+  /** Token (mín. 24 caracteres) para ver el detalle de /api/v1/estado con Authorization: Bearer. */
+  ADMIN_TOKEN: z.string().min(24, 'ADMIN_TOKEN debe tener al menos 24 caracteres').optional(),
 });
 
 export type Config = z.infer<typeof Esquema>;

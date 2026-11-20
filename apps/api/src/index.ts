@@ -28,6 +28,7 @@ const app = crearApp({
   webDist: cfg.WEB_DIST,
   trustProxy: cfg.TRUST_PROXY,
   modoMock: cfg.MP_MOCK,
+  tokenAdmin: cfg.ADMIN_TOKEN,
 });
 
 const server = app.listen(cfg.PORT, () => {

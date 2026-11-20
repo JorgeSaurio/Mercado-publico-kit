@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight, Inbox, Star } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Check, ChevronLeft, ChevronRight, Inbox, Star, Trash2 } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { borrarDatosLocales } from './datosLocales';
 import { NavLink, useSearchParams } from 'react-router-dom';
 import { favoritos, useEsFavorito, type Favorito } from './favoritos';
 import { diasHasta, hace } from './formato';
@@ -190,4 +191,40 @@ export function useFiltrosUrl<T extends Record<string, string>>(defaults: T) {
     setSp(n); // al cambiar filtros vuelve a la página 1
   };
   return { valores, pagina, aplicar, activos };
+}
+
+/** Borra los datos que la app guardó en el dispositivo. Pide confirmación en un segundo toque. */
+export function BorrarDatosLocales() {
+  const [fase, setFase] = useState<'inicio' | 'confirmar' | 'listo'>('inicio');
+  if (fase === 'listo') {
+    return (
+      <p className="confirmado" role="status">
+        <Check size={16} aria-hidden /> Datos de este dispositivo borrados.
+      </p>
+    );
+  }
+  if (fase === 'confirmar') {
+    return (
+      <div className="confirmar" role="group" aria-label="Confirmar borrado">
+        <span>Se borrarán tus guardadas y las consultas guardadas sin conexión.</span>
+        <button
+          className="btn btn--peligro"
+          onClick={async () => {
+            await borrarDatosLocales();
+            setFase('listo');
+          }}
+        >
+          Sí, borrar
+        </button>
+        <button className="btn btn--texto" onClick={() => setFase('inicio')}>
+          Cancelar
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button className="btn" onClick={() => setFase('confirmar')}>
+      <Trash2 size={16} aria-hidden /> Borrar datos de este dispositivo
+    </button>
+  );
 }

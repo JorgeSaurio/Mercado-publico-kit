@@ -38,7 +38,7 @@ export const openapi = {
   servers: [{ url: '/api/v1' }],
   paths: {
     '/salud': { get: { summary: 'Healthcheck', responses: { '200': { description: 'OK' } } } },
-    '/estado': { get: { summary: 'Cuota diaria usada y estadísticas de caché', responses: { '200': { description: 'OK' } } } },
+    '/estado': { get: { summary: 'Porcentaje de cuota usado (detalle con Bearer ADMIN_TOKEN)', responses: { '200': { description: 'OK' } } } },
     '/licitaciones': {
       get: {
         summary: 'Buscar licitaciones',

@@ -44,6 +44,14 @@ export const favoritos = {
     const existe = cache.some((x) => x.tipo === f.tipo && x.codigo === f.codigo);
     guardar(existe ? cache.filter((x) => !(x.tipo === f.tipo && x.codigo === f.codigo)) : [{ ...f, agregado: new Date().toISOString() }, ...cache]);
   },
+  borrarTodo() {
+    guardar([]);
+    try {
+      localStorage.removeItem(CLAVE);
+    } catch {
+      /* sin almacenamiento */
+    }
+  },
   quitar(tipo: Favorito['tipo'], codigo: string) {
     guardar(cache.filter((x) => !(x.tipo === tipo && x.codigo === codigo)));
   },

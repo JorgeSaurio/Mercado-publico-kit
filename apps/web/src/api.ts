@@ -51,8 +51,8 @@ export interface ParamsBusqueda {
 
 export interface EstadoServidor {
   modo: 'mock' | 'real';
-  cuota: { dia: string; usadas: number; limite: number; restantes: number };
-  cache: { entradas: number; aciertos: number; fallos: number; tasaAcierto: number };
+  /** Público: solo el porcentaje de la cuota diaria usado (el detalle exige token de administración). */
+  cuota: { porcentaje: number };
 }
 
 export const api = {

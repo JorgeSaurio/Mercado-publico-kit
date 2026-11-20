@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
+import { timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -26,6 +27,8 @@ export interface OpcionesApp {
   webDist?: string;
   trustProxy?: string;
   modoMock?: boolean;
+  /** Token para ver el detalle de /estado (cuota exacta y caché). Sin token solo se publica el porcentaje. */
+  tokenAdmin?: string;
 }
 
 // ─── Esquemas de validación ───────────────────────────────────────
@@ -70,6 +73,14 @@ class ErrorHttp extends Error {
   constructor(readonly status: number, mensaje: string, readonly detalles?: unknown) {
     super(mensaje);
   }
+}
+
+/** Compara el Bearer recibido con el token sin filtrar información por tiempo de respuesta. */
+function esAdmin(req: Request, token?: string): boolean {
+  if (!token) return false;
+  const recibido = Buffer.from((req.get('authorization') ?? '').replace(/^Bearer\s+/i, ''));
+  const esperado = Buffer.from(token);
+  return recibido.length === esperado.length && timingSafeEqual(recibido, esperado);
 }
 
 function parsear<S extends z.ZodTypeAny>(esquema: S, datos: unknown): z.output<S> {
@@ -155,9 +166,17 @@ export function crearApp(o: OpcionesApp) {
     res.json({ ok: true, modo: o.modoMock ? 'mock' : 'real', hoy: hoyEnChile() });
   });
 
-  api.get('/estado', (_req, res) => {
+  api.get('/estado', (req, res) => {
     res.set('Cache-Control', 'no-store');
-    res.json({ modo: o.modoMock ? 'mock' : 'real', ...servicio.estado() });
+    const modo = o.modoMock ? 'mock' : 'real';
+    const estado = servicio.estado();
+    if (esAdmin(req, o.tokenAdmin)) {
+      res.json({ modo, ...estado });
+      return;
+    }
+    // Público: solo el nivel de uso. Las cifras exactas y la caché ayudan a planificar abuso de la cuota.
+    const { usadas, limite } = estado.cuota;
+    res.json({ modo, cuota: { porcentaje: Math.min(100, Math.round((usadas / limite) * 100)) } });
   });
 
   api.use(['/licitaciones', '/ordenes-compra', '/proveedores'], limiteCosto);

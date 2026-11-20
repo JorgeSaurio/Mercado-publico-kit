@@ -27,7 +27,10 @@ export default function Favoritos() {
       <header className="encabezado encabezado--acciones">
         <div>
           <h1>Guardadas</h1>
-          <p>Licitaciones y órdenes que sigues. Quedan solo en este dispositivo, no se envían a ningún servidor.</p>
+          <p>
+            Licitaciones y órdenes que sigues. Quedan solo en este dispositivo, no se envían a ningún servidor.{' '}
+            <Link to="/privacidad">Borrar datos del dispositivo</Link>
+          </p>
         </div>
         {lista.length > 0 && (
           <button className="btn" onClick={() => exportarCsv(lista)}>
