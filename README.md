@@ -124,7 +124,7 @@ También incluye utilidades: `validarRut`, `formatearRut`, `calcularDv`, `format
 ## Despliegue
 
 ```bash
-docker compose up -d --build     # backend + web en http://servidor:3001
+docker compose up -d --build     # backend + web en http://127.0.0.1:3001 (publícalo con un proxy inverso con TLS)
 ```
 
 Funciona en cualquier servicio que corra contenedores (Railway, Render, Fly.io, Cloud Run, un VPS con Docker). Usa una sola instancia o cambia la caché en memoria (`apps/api/src/cache.ts`) por Redis si escalas a varias: si no, cada instancia gasta cuota por separado. Más detalles en [`docs/INTEGRACION.md`](docs/INTEGRACION.md).
@@ -132,7 +132,7 @@ Funciona en cualquier servicio que corra contenedores (Railway, Render, Fly.io, 
 ## Pruebas
 
 ```bash
-npm test          # 25 pruebas: SDK (URL, reintentos, cola, cuota, RUT) y backend (caché, validación, CORS, errores)
+npm test          # 34 pruebas: SDK (URL, reintentos, cola, cuota, RUT, ticket oculto) y backend (caché, validación, CORS, CSP, config, errores)
 npm run typecheck
 ```
 

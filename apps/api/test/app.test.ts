@@ -142,6 +142,17 @@ describe('API', () => {
     expect(no.headers['access-control-allow-origin']).toBeUndefined();
   });
 
+  it('sin orígenes configurados no habilita CORS para nadie', async () => {
+    const sinCors = crearApp({ servicio: new ServicioMercadoPublico(fuente), modoMock: true });
+    const r = await request(sinCors).get('/api/v1/salud').set('Origin', 'https://cualquiera.example');
+    expect(r.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('la CSP no permite estilos inline', async () => {
+    const r = await request(app).get('/api/v1/salud');
+    expect(r.headers['content-security-policy']).toContain("style-src 'self';");
+  });
+
   it('expone la especificación OpenAPI', async () => {
     const r = await request(app).get('/api/v1/openapi.json');
     expect(r.body.openapi).toBe('3.1.0');

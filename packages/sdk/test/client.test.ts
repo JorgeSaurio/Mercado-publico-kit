@@ -127,4 +127,9 @@ describe('MercadoPublicoClient', () => {
     expect(logs[0]).not.toContain('TICKET-123');
     expect(logs[0]).toContain('ticket=***');
   });
+
+  it('oculta el ticket si la API lo repite en el mensaje de error', async () => {
+    const c = crear((async () => ok({ Codigo: 203, Mensaje: 'Ticket TICKET-123 no válido.' }, 500)) as any, { reintentos: 0 });
+    await expect(c.licitacionesActivas()).rejects.toMatchObject({ message: 'Ticket *** no válido.' });
+  });
 });

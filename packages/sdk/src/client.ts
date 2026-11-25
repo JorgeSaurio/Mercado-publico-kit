@@ -193,7 +193,7 @@ export class MercadoPublicoClient {
     const url = new URL(`${this.baseUrl}/${ruta}`);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
     url.searchParams.set('ticket', this.ticket);
-    const urlLog = url.toString().replace(this.ticket, '***');
+    const urlLog = url.toString().replace(/([?&]ticket=)[^&]*/i, '$1***');
 
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), this.timeoutMs);
@@ -227,7 +227,8 @@ export class MercadoPublicoClient {
       // La API informa errores como { Codigo, Mensaje }, a veces con HTTP 200 y otras con 4xx/5xx
       if (cuerpo && typeof cuerpo === 'object' && 'Mensaje' in cuerpo && !('Listado' in cuerpo) && !('listaEmpresas' in cuerpo)) {
         const codigo = Number(cuerpo.Codigo) || undefined;
-        const mensaje = String(cuerpo.Mensaje);
+        // La API a veces repite el ticket en el mensaje: se oculta para que no llegue a logs ni a quien capture el error
+        const mensaje = String(cuerpo.Mensaje).replaceAll(this.ticket, '***');
         throw new MercadoPublicoError(mensaje, {
           codigo,
           status: res.ok ? 502 : res.status,

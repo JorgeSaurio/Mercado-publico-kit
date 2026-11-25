@@ -3,7 +3,7 @@ import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -75,12 +75,16 @@ class ErrorHttp extends Error {
   }
 }
 
-/** Compara el Bearer recibido con el token sin filtrar información por tiempo de respuesta. */
+const sha256 = (s: string) => createHash('sha256').update(s).digest();
+
+/**
+ * Compara el Bearer recibido con el token sin filtrar información por tiempo de respuesta.
+ * Se comparan los hashes (siempre 32 bytes) para no revelar tampoco el largo del token.
+ */
 function esAdmin(req: Request, token?: string): boolean {
   if (!token) return false;
-  const recibido = Buffer.from((req.get('authorization') ?? '').replace(/^Bearer\s+/i, ''));
-  const esperado = Buffer.from(token);
-  return recibido.length === esperado.length && timingSafeEqual(recibido, esperado);
+  const recibido = (req.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+  return timingSafeEqual(sha256(recibido), sha256(token));
 }
 
 function parsear<S extends z.ZodTypeAny>(esquema: S, datos: unknown): z.output<S> {
@@ -111,8 +115,8 @@ export function crearApp(o: OpcionesApp) {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
-          // React usa style="..." en algunos componentes (barra de cuota)
-          styleSrc: ["'self'", "'unsafe-inline'"],
+          // Sin 'unsafe-inline': React aplica style={...} vía CSSOM, que la CSP no bloquea
+          styleSrc: ["'self'"],
           imgSrc: ["'self'", 'data:'],
           fontSrc: ["'self'", 'data:'],
           connectSrc: ["'self'"],
@@ -130,7 +134,9 @@ export function crearApp(o: OpcionesApp) {
   const api = express.Router();
   api.use(
     cors({
-      origin: (origin, cb) => cb(null, !origin || !o.corsOrigins?.length || o.corsOrigins.includes(origin) || o.corsOrigins.includes('*')),
+      // Lista blanca estricta: sin orígenes configurados no se habilita CORS para nadie.
+      // Las peticiones sin Origin (mismo origen, curl) no necesitan cabeceras CORS.
+      origin: (origin, cb) => cb(null, !!origin && (o.corsOrigins ?? []).some((p) => p === origin || p === '*')),
       methods: ['GET'],
       exposedHeaders: ['X-Cache', 'X-Datos-Actualizados'],
     }),

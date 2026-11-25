@@ -2,10 +2,21 @@ services:
   mercado-publico:
     build: .
     ports:
-      - "3001:3001"
+      # Solo localhost: publica hacia internet a través de un proxy inverso con TLS (nginx, Caddy, Traefik…)
+      - "127.0.0.1:3001:3001"
     env_file: .env
     # environment:
       # Actívalo SOLO si hay un proxy (Nginx, Traefik, Cloud Run…) delante y el puerto 3001 no está expuesto
       # a internet. Si no, cualquiera puede falsificar X-Forwarded-For y saltarse el rate limit.
       # TRUST_PROXY: "1"
     restart: unless-stopped
+    # Endurecimiento del contenedor
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    mem_limit: 512m
