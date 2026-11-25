@@ -16,8 +16,8 @@
     "start": "npm run start -w @mp/api"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0",
-    "typescript": "^5.6.3"
+    "concurrently": "^10.0.7",
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": "^22.23.5 || ^24.22.3 || >=26.13.1"
