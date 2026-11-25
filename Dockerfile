@@ -1,6 +1,6 @@
 # Imagen única: backend + frontend compilado servido desde el mismo contenedor.
 # Base fijada por versión parchada (Node 22.23.5, security release 11-nov-2026) y por digest.
-FROM node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS build
+FROM node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 COPY packages/sdk/package.json packages/sdk/
@@ -13,7 +13,7 @@ ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
-FROM node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
+FROM node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5
 WORKDIR /app
 ENV NODE_ENV=production PORT=3001 WEB_DIST=/app/apps/web/dist
 COPY package.json package-lock.json .npmrc ./
